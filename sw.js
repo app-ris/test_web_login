@@ -1,4 +1,4 @@
-const CACHE = 'invio-documenti-v1';
+const CACHE = 'login-wigest-v1';
 const FILE_STATICI = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
@@ -16,15 +16,10 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // IMPORTANTE: non mettere mai in cache (né servire dalla cache) le chiamate
-  // verso i web service di autenticazione/upload, che vanno sempre in rete.
-  const isChiamataApi = e.request.method !== 'GET'
-    || url.pathname.endsWith('/login')
-    || url.pathname.endsWith('/upload');
-
-  if (isChiamataApi) {
-    e.respondWith(fetch(e.request));
-    return;
+  // Qualsiasi chiamata verso il server Wigest (o qualsiasi POST) va sempre
+  // direttamente in rete, mai intercettata o servita dalla cache.
+  if (e.request.method !== 'GET' || url.hostname.includes('lucchi.com')) {
+    return; // lascia passare senza intercettare
   }
 
   e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
