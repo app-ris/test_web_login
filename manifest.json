@@ -1,0 +1,25 @@
+{
+  "name": "Invio Documenti",
+  "short_name": "InvioDoc",
+  "description": "Autenticazione e invio di foto/documenti al servizio aziendale",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1A3A5C",
+  "theme_color": "#1A3A5C",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%231A3A5C'/%3E%3Cpath d='M96 30 30 60l66 30 66-30-66-30z' fill='white' opacity='0.9'/%3E%3Cpath d='M30 110l66 30 66-30' stroke='white' stroke-width='10' fill='none' stroke-linecap='round' stroke-linejoin='round' opacity='0.9'/%3E%3Cpath d='M30 90l66 30 66-30' stroke='white' stroke-width='10' fill='none' stroke-linecap='round' stroke-linejoin='round' opacity='0.55'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%231A3A5C'/%3E%3Cpath d='M256 80 80 160l176 80 176-80-176-80z' fill='white' opacity='0.9'/%3E%3Cpath d='M80 293l176 80 176-80' stroke='white' stroke-width='26' fill='none' stroke-linecap='round' stroke-linejoin='round' opacity='0.9'/%3E%3Cpath d='M80 240l176 80 176-80' stroke='white' stroke-width='26' fill='none' stroke-linecap='round' stroke-linejoin='round' opacity='0.55'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
