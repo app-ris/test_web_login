@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Invio Documenti">
+<meta name="theme-color" content="#1A3A5C">
+<link rel="manifest" href="manifest.json">
+<title>Invio Documenti</title>
+<style>
+  :root {
+    --blu: #1A3A5C;
+    --blu-chiaro: #2C5F8A;
+    --accento: #E8A020;
+    --accento-chiaro: #FFF3DC;
+    --verde: #1E7A4A;
+    --verde-chiaro: #E8F7EE;
+    --rosso: #C0392B;
+    --rosso-chiaro: #FBEAE8;
+    --grigio-bg: #F2F4F7;
+    --grigio-bordo: #D8DCE4;
+    --testo: #1C2B3A;
+    --testo-secondario: #5A6A7A;
+    --bianco: #FFFFFF;
+    --raggio: 12px;
+    --raggio-sm: 8px;
+    --ombra: 0 2px 12px rgba(26,58,92,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--grigio-bg); color: var(--testo); min-height: 100vh; }
+
+  .schermo { display: none; flex-direction: column; min-height: 100vh; }
+  .schermo.attivo { display: flex; }
+
+  .header { background: var(--blu); color: white; padding: 16px 20px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 10; }
+  .header-back { background: none; border: none; color: white; font-size: 22px; cursor: pointer; padding: 4px 8px 4px 0; line-height: 1; }
+  .header h1 { font-size: 18px; font-weight: 600; flex: 1; }
+  .header-sub { font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 2px; }
+  .header-logout { background: none; border: none; color: rgba(255,255,255,0.8); font-size: 13px; cursor: pointer; }
+
+  /* SCHERMO CENTRATO (config / login) */
+  .schermo-centro { justify-content: center; align-items: center; padding: 32px 24px; }
+  .logo-area { text-align: center; margin-bottom: 40px; }
+  .logo-icon { width: 80px; height: 80px; background: var(--blu); border-radius: 20px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; box-shadow: var(--ombra); }
+  .logo-icon svg { width: 42px; height: 42px; }
+  .logo-area h1 { font-size: 24px; font-weight: 700; color: var(--blu); letter-spacing: -0.5px; }
+  .logo-area p { color: var(--testo-secondario); margin-top: 6px; font-size: 14px; }
+  .card { background: var(--bianco); border-radius: var(--raggio); padding: 28px 24px; width: 100%; max-width: 380px; box-shadow: var(--ombra); }
+  .card p.descrizione { color: var(--testo-secondario); font-size: 14px; margin-bottom: 20px; line-height: 1.5; text-align: center; }
+
+  .campo { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+  .campo label { font-size: 12px; font-weight: 600; color: var(--testo-secondario); text-transform: uppercase; letter-spacing: 0.5px; }
+  .campo input { border: 2px solid var(--grigio-bordo); border-radius: var(--raggio-sm); padding: 13px 14px; font-size: 16px; color: var(--testo); background: var(--bianco); outline: none; width: 100%; }
+  .campo input:focus { border-color: var(--blu); }
+
+  .btn-primario { background: var(--blu); color: white; border: none; border-radius: var(--raggio-sm); padding: 16px 28px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; transition: background 0.15s; }
+  .btn-primario:active { background: var(--blu-chiaro); }
+  .btn-primario:disabled { background: var(--grigio-bordo); color: var(--testo-secondario); cursor: not-allowed; }
+  .btn-secondario { background: var(--bianco); color: var(--blu); border: 2px solid var(--blu); border-radius: var(--raggio-sm); padding: 13px 28px; font-size: 15px; font-weight: 600; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.15s; margin-top: 10px; }
+  .btn-secondario:active { background: var(--grigio-bg); }
+
+  #input-config-file { display: none; }
+
+  .stato-box { border-radius: var(--raggio-sm); padding: 14px 16px; margin-top: 18px; text-align: left; font-size: 13px; line-height: 1.5; }
+  .stato-box.ok { background: var(--verde-chiaro); border: 1px solid var(--verde); color: var(--verde); }
+  .stato-box.errore { background: var(--rosso-chiaro); border: 1px solid var(--rosso); color: var(--rosso); }
+  .stato-box strong { display: block; margin-bottom: 2px; }
+
+  .config-attuale { background: var(--accento-chiaro); border: 1px solid var(--accento); border-radius: var(--raggio-sm); padding: 12px 14px; margin-bottom: 20px; font-size: 12px; color: var(--blu); }
+  .config-attuale strong { display: block; font-size: 12px; margin-bottom: 2px; }
+
+  .errore-msg { color: var(--rosso); font-size: 13px; margin-top: -6px; margin-bottom: 14px; min-height: 16px; }
+
+  /* SCHERMO PRINCIPALE: invio documento */
+  #s-invio { }
+  .invio-body { flex: 1; padding: 20px 16px; }
+
+  .sezione { background: var(--bianco); border-radius: var(--raggio); padding: 20px; box-shadow: var(--ombra); margin-bottom: 16px; }
+  .sezione h3 { font-size: 13px; font-weight: 700; color: var(--testo-secondario); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
+
+  .azioni-file { display: flex; gap: 10px; }
+  .btn-azione-file { flex: 1; background: var(--grigio-bg); border: 2px dashed var(--grigio-bordo); border-radius: var(--raggio-sm); padding: 22px 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; color: var(--blu); font-size: 13px; font-weight: 600; transition: all 0.15s; }
+  .btn-azione-file:active { background: var(--grigio-bordo); }
+  .btn-azione-file svg { width: 28px; height: 28px; }
+  #input-foto, #input-allegato { display: none; }
+
+  .anteprima-lista { margin-top: 14px; }
+  .anteprima-item { display: flex; align-items: center; gap: 12px; background: var(--grigio-bg); border-radius: var(--raggio-sm); padding: 10px 12px; margin-bottom: 8px; }
+  .anteprima-thumb { width: 44px; height: 44px; border-radius: var(--raggio-sm); object-fit: cover; flex-shrink: 0; background: var(--grigio-bordo); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .anteprima-info { flex: 1; min-width: 0; }
+  .anteprima-nome { font-size: 13px; font-weight: 600; color: var(--testo); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .anteprima-dim { font-size: 11px; color: var(--testo-secondario); margin-top: 2px; }
+  .btn-rimuovi { background: none; border: none; color: var(--rosso); font-size: 20px; cursor: pointer; padding: 4px 8px; line-height: 1; }
+
+  .campo textarea { border: 2px solid var(--grigio-bordo); border-radius: var(--raggio-sm); padding: 13px 14px; font-size: 15px; color: var(--testo); background: var(--bianco); outline: none; width: 100%; resize: vertical; min-height: 80px; font-family: inherit; }
+  .campo textarea:focus { border-color: var(--blu); }
+
+  .btn-grande { background: var(--blu); color: white; border: none; border-radius: var(--raggio-sm); padding: 18px 24px; font-size: 16px; font-weight: 700; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .btn-grande:disabled { background: var(--grigio-bordo); color: var(--testo-secondario); cursor: not-allowed; }
+  .btn-grande.invio-corso { background: var(--blu-chiaro); }
+
+  .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: girare 0.7s linear infinite; }
+  @keyframes girare { to { transform: rotate(360deg); } }
+
+  /* TOAST */
+  #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--testo); color: white; padding: 12px 22px; border-radius: 30px; font-size: 13px; font-weight: 600; box-shadow: 0 4px 16px rgba(0,0,0,0.25); transition: transform 0.25s ease; z-index: 200; max-width: 90%; text-align: center; }
+  #toast.visibile { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- SCHERMO 1: CONFIGURAZIONE -->
+<div class="schermo schermo-centro attivo" id="s-config">
+  <div class="logo-area">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    </div>
+    <h1>Invio Documenti</h1>
+    <p>Configurazione iniziale richiesta</p>
+  </div>
+  <div class="card">
+    <p class="descrizione">Carica il file di configurazione fornito dal tuo amministratore per collegare l'app al servizio corretto.</p>
+    <button class="btn-primario" onclick="document.getElementById('input-config-file').click()">
+      Carica file di configurazione
+    </button>
+    <input type="file" id="input-config-file" accept="application/json,.json">
+    <div id="config-stato"></div>
+  </div>
+</div>
+
+<!-- SCHERMO 3: INVIO DOCUMENTO -->
+<div class="schermo" id="s-invio">
+  <div class="header">
+    <div style="flex:1">
+      <h1>Invio Documenti</h1>
+      <div class="header-sub" id="invio-sub"></div>
+    </div>
+    <button class="header-logout" onclick="eseguiLogout()">Esci</button>
+  </div>
+  <div class="invio-body">
+
+    <div class="sezione">
+      <h3>Documento</h3>
+      <div class="azioni-file">
+        <div class="btn-azione-file" onclick="document.getElementById('input-foto').click()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Scatta foto
+        </div>
+        <div class="btn-azione-file" onclick="document.getElementById('input-allegato').click()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          Allega file
+        </div>
+      </div>
+      <input type="file" id="input-foto" accept="image/*" capture="environment">
+      <input type="file" id="input-allegato">
+      <div class="anteprima-lista" id="anteprima-lista"></div>
+    </div>
+
+    <div class="sezione">
+      <h3>Note (opzionale)</h3>
+      <div class="campo" style="margin-bottom:0">
+        <textarea id="campo-note" placeholder="Aggiungi una nota o un riferimento..."></textarea>
+      </div>
+    </div>
+
+    <button class="btn-grande" id="btn-invia" onclick="inviaDocumento()" disabled>
+      Invia documento
+    </button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// =====================================================================
+// STATO GLOBALE
+// =====================================================================
+let config = null;        // { istanza } -> da file JSON
+let fileSelezionato = null;
+
+// URL fisso del servlet SOAP di autenticazione
+const SOAP_URL = 'https://www.lucchi.com:448/wigest617/servlet/bgla_chkpwd';
+
+// Costruisce l'envelope SOAP con l'istanza dal file di configurazione
+function buildSoapEnvelope(istanza) {
+  return `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:bgla="http://bgla_chkpwd.ws.localhost/">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <bgla:bgla_chkpwd_Run>
+         <bgla:m_UserName>admin</bgla:m_UserName>
+         <bgla:m_Password>gla_DEC_2016</bgla:m_Password>
+         <bgla:m_Instance>${istanza}</bgla:m_Instance>
+         <bgla:p_User>1</bgla:p_User>
+         <bgla:p_Password>gla_DEC_2016</bgla:p_Password>
+      </bgla:bgla_chkpwd_Run>
+   </soapenv:Body>
+</soapenv:Envelope>`;
+}
+
+// Estrae il valore del tag <return> dalla risposta SOAP XML
+function leggiReturnSoap(xmlText) {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xmlText, 'text/xml');
+    const returnEl = doc.getElementsByTagNameNS('*', 'return')[0];
+    return returnEl ? returnEl.textContent.trim() : null;
+  } catch (err) {
+    return null;
+  }
+}
+
+// =====================================================================
+// AVVIO APP: verifica config salvata, poi chiama il servizio SOAP
+// =====================================================================
+window.addEventListener('DOMContentLoaded', () => {
+  caricaConfigSalvata();
+  if (config) {
+    mostraSchermo('s-invio');
+    aggiornaIntestazioneInvio();
+    verificaServizio(); // chiamata SOAP di verifica in background
+  } else {
+    mostraSchermo('s-config');
+  }
+});
+
+// Chiamata SOAP all'avvio: mostra il risultato del tag <return> nell'intestazione
+async function verificaServizio() {
+  const subEl = document.getElementById('invio-sub');
+  subEl.textContent = `${config.istanza} · verifica servizio...`;
+  try {
+    const risposta = await fetch(SOAP_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml; charset=UTF-8',
+        'SOAPAction': '""'
+      },
+      body: buildSoapEnvelope(config.istanza)
+    });
+    const xml = await risposta.text();
+    const valore = leggiReturnSoap(xml);
+    subEl.textContent = `${config.istanza} · servizio: ${valore ?? 'risposta non leggibile'}`;
+  } catch (err) {
+    subEl.textContent = `${config.istanza} · servizio non raggiungibile`;
+  }
+}
+
+// =====================================================================
+// SCHERMO 1: CONFIGURAZIONE (upload file JSON)
+// =====================================================================
+document.getElementById('input-config-file').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    let parsed;
+    try {
+      parsed = JSON.parse(evt.target.result);
+    } catch (err) {
+      mostraStatoConfig('errore', 'File non valido', 'Il file non è un JSON leggibile. Verifica che sia il file corretto.');
+      return;
+    }
+    // Validazione minima: serve solo il campo istanza
+    if (!parsed.istanza) {
+      mostraStatoConfig('errore', 'Campi mancanti', 'Il file deve contenere il campo "istanza".');
+      return;
+    }
+    config = { istanza: parsed.istanza.trim() };
+    try {
+      localStorage.setItem('app_config', JSON.stringify(config));
+    } catch (err) {
+      mostraToast('Attenzione: impossibile salvare la configurazione sul dispositivo');
+    }
+    mostraStatoConfig('ok', 'Configurazione caricata', `Istanza: ${config.istanza}`);
+    setTimeout(() => {
+      mostraSchermo('s-invio');
+      aggiornaIntestazioneInvio();
+      verificaServizio();
+    }, 700);
+  };
+  reader.onerror = function() {
+    mostraStatoConfig('errore', 'Errore di lettura', 'Non è stato possibile leggere il file selezionato.');
+  };
+  reader.readAsText(file);
+});
+
+function mostraStatoConfig(tipo, titolo, testo) {
+  const el = document.getElementById('config-stato');
+  el.innerHTML = `<div class="stato-box ${tipo}"><strong>${titolo}</strong>${testo}</div>`;
+}
+
+function caricaConfigSalvata() {
+  try {
+    const raw = localStorage.getItem('app_config');
+    if (raw) config = JSON.parse(raw);
+  } catch (err) {
+    config = null;
+  }
+}
+
+function cambiaConfigurazione() {
+  if (!confirm('Cambiare la configurazione?')) return;
+  localStorage.removeItem('app_config');
+  config = null;
+  document.getElementById('config-stato').innerHTML = '';
+  mostraSchermo('s-config');
+}
+
+// =====================================================================
+// SCHERMO INVIO: intestazione
+// =====================================================================
+function aggiornaIntestazioneInvio() {
+  document.getElementById('invio-sub').textContent = config.istanza;
+}
+
+function eseguiLogout() {
+  if (!confirm('Vuoi cambiare configurazione?')) return;
+  localStorage.removeItem('app_config');
+  config = null;
+  fileSelezionato = null;
+  document.getElementById('anteprima-lista').innerHTML = '';
+  document.getElementById('campo-note').value = '';
+  aggiornaBottoneInvia();
+  mostraSchermo('s-config');
+}
+
+// Costruisce gli header da riusare in ogni chiamata
+function headerAutenticazione() {
+  return {};
+}
+
+// =====================================================================
+// SCHERMO 3: SELEZIONE FILE E INVIO
+// =====================================================================
+document.getElementById('input-foto').addEventListener('change', function(e) {
+  gestisciSelezioneFile(e.target.files[0]);
+});
+document.getElementById('input-allegato').addEventListener('change', function(e) {
+  gestisciSelezioneFile(e.target.files[0]);
+});
+
+function gestisciSelezioneFile(file) {
+  if (!file) return;
+  fileSelezionato = file;
+  renderAnteprima();
+  aggiornaBottoneInvia();
+}
+
+function renderAnteprima() {
+  const container = document.getElementById('anteprima-lista');
+  container.innerHTML = '';
+  if (!fileSelezionato) return;
+
+  const item = document.createElement('div');
+  item.className = 'anteprima-item';
+
+  const isImmagine = fileSelezionato.type.startsWith('image/');
+  const thumbHtml = isImmagine
+    ? `<img class="anteprima-thumb" id="thumb-img" alt="">`
+    : `<div class="anteprima-thumb">📄</div>`;
+
+  item.innerHTML = `
+    ${thumbHtml}
+    <div class="anteprima-info">
+      <div class="anteprima-nome">${fileSelezionato.name}</div>
+      <div class="anteprima-dim">${formattaDimensione(fileSelezionato.size)}</div>
+    </div>
+    <button class="btn-rimuovi" onclick="rimuoviFile()">×</button>
+  `;
+  container.appendChild(item);
+
+  if (isImmagine) {
+    const reader = new FileReader();
+    reader.onload = e => { document.getElementById('thumb-img').src = e.target.result; };
+    reader.readAsDataURL(fileSelezionato);
+  }
+}
+
+function rimuoviFile() {
+  fileSelezionato = null;
+  document.getElementById('input-foto').value = '';
+  document.getElementById('input-allegato').value = '';
+  renderAnteprima();
+  aggiornaBottoneInvia();
+}
+
+function formattaDimensione(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function aggiornaBottoneInvia() {
+  document.getElementById('btn-invia').disabled = !fileSelezionato;
+}
+
+async function inviaDocumento() {
+  if (!fileSelezionato) return;
+
+  const btn = document.getElementById('btn-invia');
+  btn.disabled = true;
+  btn.classList.add('invio-corso');
+  btn.innerHTML = '<span class="spinner"></span> Invio in corso...';
+
+  // Metadati generici: personalizza questi campi in base al secondo web service.
+  const metadati = {
+    istanza: config.istanza,
+    note: document.getElementById('campo-note').value.trim(),
+    dataOraInvio: new Date().toISOString(),
+    nomeFileOriginale: fileSelezionato.name,
+    tipoFile: fileSelezionato.type || 'application/octet-stream'
+  };
+
+  // multipart/form-data: più efficiente di base64-in-JSON per file da fotocamera
+  const formData = new FormData();
+  formData.append('metadati', JSON.stringify(metadati));
+  formData.append('file', fileSelezionato, fileSelezionato.name);
+
+  try {
+    const risposta = await fetch(`${config.url}${config.servletUpload}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: headerAutenticazione(), // NON impostare Content-Type a mano con FormData: il browser aggiunge il boundary corretto
+      body: formData
+    });
+
+    if (risposta.status === 401) {
+      mostraToast('Sessione scaduta. Effettua di nuovo l\'accesso.');
+      eseguiLogoutSilenzioso();
+      return;
+    }
+
+    if (!risposta.ok) {
+      mostraToast(`Invio non riuscito (errore ${risposta.status})`);
+      return;
+    }
+
+    mostraToast('✓ Documento inviato correttamente');
+    rimuoviFile();
+    document.getElementById('campo-note').value = '';
+
+  } catch (err) {
+    mostraToast('Impossibile contattare il server. Verifica la connessione.');
+  } finally {
+    btn.classList.remove('invio-corso');
+    btn.innerHTML = 'Invia documento';
+    aggiornaBottoneInvia();
+  }
+}
+
+function eseguiLogoutSilenzioso() {
+  localStorage.removeItem('app_sessione');
+  sessione = null;
+  mostraSchermoLogin();
+}
+
+// =====================================================================
+// NAVIGAZIONE E UTILITY
+// =====================================================================
+function mostraSchermo(id) {
+  document.querySelectorAll('.schermo').forEach(s => s.classList.remove('attivo'));
+  document.getElementById(id).classList.add('attivo');
+  window.scrollTo(0, 0);
+}
+
+function mostraToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('visibile');
+  setTimeout(() => t.classList.remove('visibile'), 2800);
+}
+
+// =====================================================================
+// SERVICE WORKER (installabilità PWA)
+// =====================================================================
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
